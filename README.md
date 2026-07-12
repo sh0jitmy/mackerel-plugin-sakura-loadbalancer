@@ -35,6 +35,20 @@ mkr plugin install sh0jitmy/mackerel-plugin-sakura-loadbalancer@[version] #v0.0.
 
 ---
 
+## 📝 Mackerel エージェントの設定例
+
+インストール後、`/etc/mackerel-agent/mackerel-agent.conf` に以下のように設定します。
+
+API アクセストークンなどの機密情報は、プラグインの引数ではなく `env` 項目を使用して環境変数として渡すことを推奨します。
+
+```toml
+[plugin.metrics.sakura-loadbalancer]
+command = ["mackerel-plugin-sakura-loadbalancer", "-lb-id", "123456789012", "-server-ip", "192.168.1.10"]
+env = { SAKURACLOUD_ACCESS_TOKEN = "<APIトークン>", SAKURACLOUD_ACCESS_TOKEN_SECRET = "<APIシークレット>", SAKURACLOUD_ZONE = "is1a" }
+```
+
+---
+
 ## 🛠️ クイックスタート
 
 ### 1. ビルド
