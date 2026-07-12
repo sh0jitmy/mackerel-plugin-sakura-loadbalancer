@@ -19,6 +19,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	mp "github.com/mackerelio/go-mackerel-plugin"
@@ -40,6 +41,7 @@ type LoadBalancerPlugin struct {
 	Prefix         string
 	Client         LoadBalancerStatusGetter
 	Context        context.Context
+	Debug          bool
 }
 
 // MetricKeyPrefix returns the prefix of metric keys.
@@ -109,13 +111,27 @@ func (p *LoadBalancerPlugin) GraphDefinition() map[string]mp.Graphs {
 
 // FetchMetrics fetches the status from the Load Balancer and returns metrics.
 func (p *LoadBalancerPlugin) FetchMetrics() (map[string]float64, error) {
+	if p.Debug {
+		log.Printf("[DEBUG] Starting metrics fetch for LoadBalancer ID: %v, Zone: %s, Target Server IP: %s", p.LoadBalancerID, p.Zone, p.TargetServerIP)
+	}
+
 	if p.Client == nil {
+		if p.Debug {
+			log.Printf("[DEBUG] API client is nil (not initialized)")
+		}
 		return nil, fmt.Errorf("API client is not initialized")
 	}
 
 	result, err := p.Client.Status(p.Context, p.Zone, p.LoadBalancerID)
 	if err != nil {
+		if p.Debug {
+			log.Printf("[DEBUG] API call failed: %v", err)
+		}
 		return nil, fmt.Errorf("failed to get load balancer status: %w", err)
+	}
+
+	if p.Debug {
+		log.Printf("[DEBUG] Successfully fetched status from API. Found %d VIP configurations.", len(result.Status))
 	}
 
 	metrics := make(map[string]float64)
@@ -129,7 +145,15 @@ func (p *LoadBalancerPlugin) FetchMetrics() (map[string]float64, error) {
 		escapedVIP := strings.ReplaceAll(vipStatus.VirtualIPAddress, ".", "_")
 		portStr := vipStatus.Port.String()
 
+		if p.Debug {
+			log.Printf("[DEBUG] Checking VIP: %s, Port: %s (number of servers: %d)", vipStatus.VirtualIPAddress, portStr, len(vipStatus.Servers))
+		}
+
 		for _, serverStatus := range vipStatus.Servers {
+			if p.Debug {
+				log.Printf("[DEBUG]   - Server IP: %s, Status: %s, CPS: %.2f, ActiveConn: %.2f", serverStatus.IPAddress, serverStatus.Status, serverStatus.CPS.Float64(), serverStatus.ActiveConn.Float64())
+			}
+
 			if serverStatus.IPAddress == p.TargetServerIP {
 				targetFound = true
 				isUp := strings.ToLower(string(serverStatus.Status)) == "up"
@@ -154,6 +178,10 @@ func (p *LoadBalancerPlugin) FetchMetrics() (map[string]float64, error) {
 				metrics[fmt.Sprintf("server.status.%s", instanceSuffix)] = statusVal
 				metrics[fmt.Sprintf("server.cps.%s", instanceSuffix)] = cpsVal
 				metrics[fmt.Sprintf("server.active_conn.%s", instanceSuffix)] = connVal
+
+				if p.Debug {
+					log.Printf("[DEBUG]     => Matches target server! Storing individual metrics. Status: %.1f", statusVal)
+				}
 			}
 		}
 	}
@@ -167,11 +195,19 @@ func (p *LoadBalancerPlugin) FetchMetrics() (map[string]float64, error) {
 		}
 		metrics["target.cps.cps"] = totalCPS
 		metrics["target.active_conn.active_conn"] = totalActiveConn
+
+		if p.Debug {
+			log.Printf("[DEBUG] Target server found on LoadBalancer. Target all UP: %t, Total CPS: %.2f, Total ActiveConn: %.2f", targetAllUp, totalCPS, totalActiveConn)
+		}
 	} else {
 		// Target server not configured on this Load Balancer
 		metrics["target.status.status"] = 0.0
 		metrics["target.cps.cps"] = 0.0
 		metrics["target.active_conn.active_conn"] = 0.0
+
+		if p.Debug {
+			log.Printf("[DEBUG] Target server %s was NOT configured on this LoadBalancer. Setting target status to 0.0", p.TargetServerIP)
+		}
 	}
 
 	return metrics, nil

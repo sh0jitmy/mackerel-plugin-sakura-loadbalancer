@@ -66,6 +66,11 @@ func main() {
 				Value: "loadbalancer",
 				Usage: "Metric Key Prefix",
 			},
+			&cli.BoolFlag{
+				Name:    "debug",
+				EnvVars: []string{"SAKURA_LB_DEBUG", "DEBUG"},
+				Usage:   "Enable debug logging (prints verbose logs to stderr)",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			token := c.String("token")
@@ -74,6 +79,7 @@ func main() {
 			lbIDStr := c.String("lb-id")
 			serverIP := c.String("server-ip")
 			prefix := c.String("metric-key-prefix")
+			debug := c.Bool("debug")
 
 			isMetaMode := os.Getenv("MACKEREL_AGENT_PLUGIN_META") != ""
 
@@ -114,6 +120,7 @@ func main() {
 				Prefix:         prefix,
 				Client:         lbOp,
 				Context:        context.Background(),
+				Debug:          debug,
 			}
 
 			// Output Mackerel definitions or values
