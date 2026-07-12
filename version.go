@@ -17,4 +17,4 @@
 package main
 
 // Version is the application version, automatically managed by tagpr.
-const Version = "0.0.0"
+const Version = "0.0.1"
