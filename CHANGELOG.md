@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.0.7](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.6...v0.0.7) - 2026-07-12
+
+- Fix/metirc label by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/20
+
 ## [v0.0.6](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.5...v0.0.6) - 2026-07-12
 
 - Feat/simplify metric keys by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/18
