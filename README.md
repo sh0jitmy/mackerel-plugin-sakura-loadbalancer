@@ -62,18 +62,83 @@ make build
 ```
 ビルドが成功すると、`bin/mackerel-plugin-sakura-loadbalancer` にバイナリが生成されます。
 
-### 2. 動作確認
-環境変数またはコマンドライン引数経由で API 情報を渡して実行します。
+### 2. 動作確認と切り分け手順 (デバッグログモード)
 
+手動実行時に詳細な調査・切り分けを行うため、`--debug` フラグ（または環境変数 `DEBUG=true`）が利用可能です。デバッグログは標準エラー出力（stderr）に出力されるため、Mackerel プラグインの動作を妨げません。
+
+#### 実行手順
 ```bash
-# コマンド引数による実行例
+# デバッグログ付きで手動実行する例
 ./bin/mackerel-plugin-sakura-loadbalancer \
-  -token="<SAKURA_ACCESS_TOKEN>" \
-  -secret="<SAKURA_ACCESS_TOKEN_SECRET>" \
-  -zone="is1a" \
-  -lb-id="123456789012" \
-  -server-ip="192.168.1.10"
+  --token="<SAKURA_ACCESS_TOKEN>" \
+  --secret="<SAKURA_ACCESS_TOKEN_SECRET>" \
+  --zone="is1a" \
+  --lb-id="123456789012" \
+  --server-ip="192.168.1.10" \
+  --debug
 ```
+
+#### 各ケースにおける出力結果
+
+##### ケースA：正常検出時（指定サーバがロードバランサで稼働中）
+- **標準出力（stdout）**: Mackerel用の正常値（`status` が `1`）が出力されます。
+  ```text
+  loadbalancer.target.status.status	1.000000	1718000000
+  loadbalancer.target.cps.cps	45.000000	1718000000
+  loadbalancer.target.active_conn.active_conn	5.000000	1718000000
+  loadbalancer.server.status.192_0_2_1_80	1.000000	1718000000
+  loadbalancer.server.cps.192_0_2_1_80	45.000000	1718000000
+  loadbalancer.server.active_conn.192_0_2_1_80	5.000000	1718000000
+  ```
+- **標準エラー出力（stderr/デバッグログ）**:
+  ```text
+  2026/07/12 19:33:38 [DEBUG] Starting metrics fetch for LoadBalancer ID: 123456789012, Zone: is1a, Target Server IP: 192.168.1.10
+  2026/07/12 19:33:38 [DEBUG] Successfully fetched status from API. Found 1 VIP configurations.
+  2026/07/12 19:33:38 [DEBUG] Checking VIP: 192.0.2.1, Port: 80 (number of servers: 1)
+  2026/07/12 19:33:38 [DEBUG]   - Server IP: 192.168.1.10, Status: up, CPS: 45.00, ActiveConn: 5.00
+  2026/07/12 19:33:38 [DEBUG]     => Matches target server! Storing individual metrics. Status: 1.0
+  2026/07/12 19:33:38 [DEBUG] Target server found on LoadBalancer. Target all UP: true, Total CPS: 45.00, Total ActiveConn: 5.00
+  ```
+
+##### ケースB：異常検出時（指定サーバがDOWN、またはロードバランサに設定されていない）
+- **標準出力（stdout）**: 異常値（`status` が `0`）が出力されます。
+  ```text
+  loadbalancer.target.status.status	0.000000	1718000000
+  loadbalancer.target.cps.cps	0.000000	1718000000
+  loadbalancer.target.active_conn.active_conn	0.000000	1718000000
+  ```
+- **標準エラー出力（stderr/デバッグログ - DOWN時）**:
+  ```text
+  2026/07/12 19:33:38 [DEBUG] Starting metrics fetch for LoadBalancer ID: 123456789012, Zone: is1a, Target Server IP: 192.168.1.10
+  2026/07/12 19:33:38 [DEBUG] Successfully fetched status from API. Found 1 VIP configurations.
+  2026/07/12 19:33:38 [DEBUG] Checking VIP: 192.0.2.1, Port: 80 (number of servers: 1)
+  2026/07/12 19:33:38 [DEBUG]   - Server IP: 192.168.1.10, Status: down, CPS: 0.00, ActiveConn: 0.00
+  2026/07/12 19:33:38 [DEBUG]     => Matches target server! Storing individual metrics. Status: 0.0
+  2026/07/12 19:33:38 [DEBUG] Target server found on LoadBalancer. Target all UP: false, Total CPS: 0.00, Total ActiveConn: 0.00
+  ```
+- **標準エラー出力（stderr/デバッグログ - 設定自体が存在しない場合）**:
+  ```text
+  2026/07/12 19:33:38 [DEBUG] Starting metrics fetch for LoadBalancer ID: 123456789012, Zone: is1a, Target Server IP: 192.168.1.10
+  2026/07/12 19:33:38 [DEBUG] Successfully fetched status from API. Found 1 VIP configurations.
+  2026/07/12 19:33:38 [DEBUG] Checking VIP: 192.0.2.1, Port: 80 (number of servers: 1)
+  2026/07/12 19:33:38 [DEBUG]   - Server IP: 192.168.1.99, Status: up, CPS: 10.00, ActiveConn: 1.00
+  2026/07/12 19:33:38 [DEBUG] Target server 192.168.1.10 was NOT configured on this LoadBalancer. Setting target status to 0.0
+  ```
+
+##### ケースC：設定不足・APIエラーによる動作不良
+- **標準出力（stdout）**: 何も出力されません（Mackerelエージェントは値の収集をスキップします）。
+- **標準エラー出力（stderr/デバッグログ - トークン等の未指定）**:
+  ```text
+  Sakura Cloud Access Token and Secret are required (via --token and --secret flags or SAKURACLOUD_ACCESS_TOKEN and SAKURACLOUD_ACCESS_TOKEN_SECRET env vars)
+  exit status 1
+  ```
+- **標準エラー出力（stderr/デバッグログ - API通信エラーや認証情報の誤り）**:
+  ```text
+  2026/07/12 19:33:38 [DEBUG] Starting metrics fetch for LoadBalancer ID: 123456789012, Zone: is1a, Target Server IP: 192.168.1.10
+  2026/07/12 19:33:38 [DEBUG] API call failed: sacloud: Resource not found: ... (または 401 Unauthorized など)
+  failed to output metrics: failed to get load balancer status: ...
+  exit status 1
+  ```
 
 ---
 

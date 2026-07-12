@@ -97,6 +97,7 @@ func TestLoadBalancerPlugin_FetchMetrics_SuccessAllUp(t *testing.T) {
 		Zone:           "is1a",
 		Client:         mockClient,
 		Context:        context.Background(),
+		Debug:          true,
 	}
 
 	metrics, err := p.FetchMetrics()
