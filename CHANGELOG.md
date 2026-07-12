@@ -1,5 +1,21 @@
 # Changelog
 
+## [v0.0.6](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.5...v0.0.6) - 2026-07-12
+
+- Feat/simplify metric keys by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/18
+
+## [v0.0.5](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.4...v0.0.5) - 2026-07-12
+
+- fix: correct summary metric keys to match GraphDefinition metrics names by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/16
+
+## [v0.0.4](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.3...v0.0.4) - 2026-07-12
+
+- feat: support mkr plugin install and document install paths by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/14
+
+## [v0.0.3](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.2...v0.0.3) - 2026-07-12
+
+- ci: integrate goreleaser into tagpr workflow by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/12
+
 ## [v0.0.2](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.1...v0.0.2) - 2026-07-12
 
 - docs: update README with current plugin usage and configuration details by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/9

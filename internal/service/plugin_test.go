@@ -258,3 +258,181 @@ func TestLoadBalancerPlugin_FetchMetrics_NilClient(t *testing.T) {
 	assert.Nil(t, metrics)
 	assert.Contains(t, err.Error(), "API client is not initialized")
 }
+
+func TestLoadBalancerPlugin_RunCheck_SuccessAllUp(t *testing.T) {
+	t.Parallel()
+	mockClient := &mockLoadBalancerClient{
+		statusFunc: func(ctx context.Context, zone string, id types.ID) (*iaas.LoadBalancerStatusResult, error) {
+			return &iaas.LoadBalancerStatusResult{
+				Status: []*iaas.LoadBalancerStatus{
+					{
+						VirtualIPAddress: "192.0.2.1",
+						Port:             80,
+						Servers: []*iaas.LoadBalancerServerStatus{
+							{
+								IPAddress: "192.168.1.10",
+								Status:    types.ServerInstanceStatuses.Up,
+							},
+						},
+					},
+				},
+			}, nil
+		},
+	}
+
+	p := &LoadBalancerPlugin{
+		TargetServerIP: "192.168.1.10",
+		LoadBalancerID: types.ID(123456789012),
+		Zone:           "is1a",
+		Client:         mockClient,
+		Context:        context.Background(),
+	}
+
+	msg, code := p.RunCheck()
+	assert.Equal(t, 0, code)
+	assert.Contains(t, msg, "LOADBALANCER OK")
+	assert.Contains(t, msg, "target server 192.168.1.10 status is UP")
+}
+
+func TestLoadBalancerPlugin_RunCheck_SuccessSomeDown(t *testing.T) {
+	t.Parallel()
+	mockClient := &mockLoadBalancerClient{
+		statusFunc: func(ctx context.Context, zone string, id types.ID) (*iaas.LoadBalancerStatusResult, error) {
+			return &iaas.LoadBalancerStatusResult{
+				Status: []*iaas.LoadBalancerStatus{
+					{
+						VirtualIPAddress: "192.0.2.1",
+						Port:             80,
+						Servers: []*iaas.LoadBalancerServerStatus{
+							{
+								IPAddress: "192.168.1.10",
+								Status:    types.ServerInstanceStatuses.Down,
+							},
+						},
+					},
+				},
+			}, nil
+		},
+	}
+
+	p := &LoadBalancerPlugin{
+		TargetServerIP: "192.168.1.10",
+		LoadBalancerID: types.ID(123456789012),
+		Zone:           "is1a",
+		Client:         mockClient,
+		Context:        context.Background(),
+	}
+
+	msg, code := p.RunCheck()
+	assert.Equal(t, 2, code)
+	assert.Contains(t, msg, "LOADBALANCER CRITICAL")
+	assert.Contains(t, msg, "target server 192.168.1.10 status is DOWN")
+}
+
+func TestLoadBalancerPlugin_RunCheck_ServerNotFound(t *testing.T) {
+	t.Parallel()
+	mockClient := &mockLoadBalancerClient{
+		statusFunc: func(ctx context.Context, zone string, id types.ID) (*iaas.LoadBalancerStatusResult, error) {
+			return &iaas.LoadBalancerStatusResult{
+				Status: []*iaas.LoadBalancerStatus{
+					{
+						VirtualIPAddress: "192.0.2.1",
+						Port:             80,
+						Servers: []*iaas.LoadBalancerServerStatus{
+							{
+								IPAddress: "192.168.1.20",
+								Status:    types.ServerInstanceStatuses.Up,
+							},
+						},
+					},
+				},
+			}, nil
+		},
+	}
+
+	p := &LoadBalancerPlugin{
+		TargetServerIP: "192.168.1.10",
+		LoadBalancerID: types.ID(123456789012),
+		Zone:           "is1a",
+		Client:         mockClient,
+		Context:        context.Background(),
+	}
+
+	msg, code := p.RunCheck()
+	assert.Equal(t, 2, code)
+	assert.Contains(t, msg, "LOADBALANCER CRITICAL")
+	assert.Contains(t, msg, "target server 192.168.1.10 is not found on Load Balancer")
+}
+
+func TestLoadBalancerPlugin_RunCheck_APIError(t *testing.T) {
+	t.Parallel()
+	mockClient := &mockLoadBalancerClient{
+		statusFunc: func(ctx context.Context, zone string, id types.ID) (*iaas.LoadBalancerStatusResult, error) {
+			return nil, errors.New("API error occurred")
+		},
+	}
+
+	p := &LoadBalancerPlugin{
+		TargetServerIP: "192.168.1.10",
+		LoadBalancerID: types.ID(123456789012),
+		Zone:           "is1a",
+		Client:         mockClient,
+		Context:        context.Background(),
+	}
+
+	msg, code := p.RunCheck()
+	assert.Equal(t, 3, code)
+	assert.Contains(t, msg, "LOADBALANCER UNKNOWN")
+	assert.Contains(t, msg, "failed to get load balancer status")
+}
+
+func TestLoadBalancerPlugin_RunCheck_NilClient(t *testing.T) {
+	t.Parallel()
+	p := &LoadBalancerPlugin{
+		TargetServerIP: "192.168.1.10",
+		LoadBalancerID: types.ID(123456789012),
+		Zone:           "is1a",
+		Client:         nil,
+		Context:        context.Background(),
+	}
+
+	msg, code := p.RunCheck()
+	assert.Equal(t, 3, code)
+	assert.Contains(t, msg, "LOADBALANCER UNKNOWN")
+	assert.Contains(t, msg, "API client is not initialized")
+}
+
+func TestLoadBalancerPlugin_RunCheck_CustomPrefix(t *testing.T) {
+	t.Parallel()
+	mockClient := &mockLoadBalancerClient{
+		statusFunc: func(ctx context.Context, zone string, id types.ID) (*iaas.LoadBalancerStatusResult, error) {
+			return &iaas.LoadBalancerStatusResult{
+				Status: []*iaas.LoadBalancerStatus{
+					{
+						VirtualIPAddress: "192.0.2.1",
+						Port:             80,
+						Servers: []*iaas.LoadBalancerServerStatus{
+							{
+								IPAddress: "192.168.1.10",
+								Status:    types.ServerInstanceStatuses.Up,
+							},
+						},
+					},
+				},
+			}, nil
+		},
+	}
+
+	p := &LoadBalancerPlugin{
+		TargetServerIP: "192.168.1.10",
+		LoadBalancerID: types.ID(123456789012),
+		Zone:           "is1a",
+		Prefix:         "custom-lb",
+		Client:         mockClient,
+		Context:        context.Background(),
+	}
+
+	msg, code := p.RunCheck()
+	assert.Equal(t, 0, code)
+	assert.Contains(t, msg, "CUSTOM-LB OK")
+}
