@@ -68,13 +68,25 @@ func (p *LoadBalancerPlugin) GraphDefinition() map[string]mp.Graphs {
 	labelPrefix := title(p.MetricKeyPrefix())
 
 	return map[string]mp.Graphs{
-		"target": {
-			Label: labelPrefix + " Target Server Summary",
+		"target.status": {
+			Label: labelPrefix + " Target Server Status",
+			Unit:  "integer",
+			Metrics: []mp.Metrics{
+				{Name: "check", Label: "Status (1=UP, 0=DOWN)"},
+			},
+		},
+		"target.cps": {
+			Label: labelPrefix + " Target Server CPS",
 			Unit:  "float",
 			Metrics: []mp.Metrics{
-				{Name: "status", Label: "Status (1=UP, 0=DOWN)"},
-				{Name: "cps", Label: "CPS"},
-				{Name: "active_conn", Label: "Active Connections"},
+				{Name: "value", Label: "CPS"},
+			},
+		},
+		"target.active_conn": {
+			Label: labelPrefix + " Target Server Active Connections",
+			Unit:  "integer",
+			Metrics: []mp.Metrics{
+				{Name: "count", Label: "Active Connections"},
 			},
 		},
 		"server.status.#": {
@@ -181,21 +193,21 @@ func (p *LoadBalancerPlugin) FetchMetrics() (map[string]float64, error) {
 	// Set summary target metrics
 	if targetFound {
 		if targetAllUp {
-			metrics["status"] = 1.0
+			metrics["check"] = 1.0
 		} else {
-			metrics["status"] = 0.0
+			metrics["check"] = 0.0
 		}
-		metrics["cps"] = totalCPS
-		metrics["active_conn"] = totalActiveConn
+		metrics["value"] = totalCPS
+		metrics["count"] = totalActiveConn
 
 		if p.Debug {
 			log.Printf("[DEBUG] Target server found on LoadBalancer. Target all UP: %t, Total CPS: %.2f, Total ActiveConn: %.2f", targetAllUp, totalCPS, totalActiveConn)
 		}
 	} else {
 		// Target server not configured on this Load Balancer
-		metrics["status"] = 0.0
-		metrics["cps"] = 0.0
-		metrics["active_conn"] = 0.0
+		metrics["check"] = 0.0
+		metrics["value"] = 0.0
+		metrics["count"] = 0.0
 
 		if p.Debug {
 			log.Printf("[DEBUG] Target server %s was NOT configured on this LoadBalancer. Setting target status to 0.0", p.TargetServerIP)
@@ -214,7 +226,7 @@ func (p *LoadBalancerPlugin) RunCheck() (string, int) {
 		return fmt.Sprintf("%s UNKNOWN: %s", strings.ToUpper(p.MetricKeyPrefix()), err.Error()), 3
 	}
 
-	statusVal, ok := metrics["status"]
+	statusVal, ok := metrics["check"]
 	if !ok {
 		return fmt.Sprintf("%s UNKNOWN: status metric not found", strings.ToUpper(p.MetricKeyPrefix())), 3
 	}

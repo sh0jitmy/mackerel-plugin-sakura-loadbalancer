@@ -92,11 +92,11 @@ make build
 #### 各ケースにおける出力結果
 
 ##### ケースA：正常検出時（指定サーバがロードバランサで稼働中）
-- **標準出力（stdout）**: Mackerel用の正常値（`status` が `1`）が出力されます。
+- **標準出力（stdout）**: Mackerel用の正常値が出力されます。
   ```text
-  loadbalancer.target.status	1.000000	1718000000
-  loadbalancer.target.cps	45.000000	1718000000
-  loadbalancer.target.active_conn	5.000000	1718000000
+  loadbalancer.target.status.check	1.000000	1718000000
+  loadbalancer.target.cps.value	45.000000	1718000000
+  loadbalancer.target.active_conn.count	5.000000	1718000000
   loadbalancer.server.status.192_0_2_1_80	1.000000	1718000000
   loadbalancer.server.cps.192_0_2_1_80	45.000000	1718000000
   loadbalancer.server.active_conn.192_0_2_1_80	5.000000	1718000000
@@ -112,11 +112,11 @@ make build
   ```
 
 ##### ケースB：異常検出時（指定サーバがDOWN、またはロードバランサに設定されていない）
-- **標準出力（stdout）**: 異常値（`status` が `0`）が出力されます。
+- **標準出力（stdout）**: 異常値が出力されます。
   ```text
-  loadbalancer.target.status	0.000000	1718000000
-  loadbalancer.target.cps	0.000000	1718000000
-  loadbalancer.target.active_conn	0.000000	1718000000
+  loadbalancer.target.status.check	0.000000	1718000000
+  loadbalancer.target.cps.value	0.000000	1718000000
+  loadbalancer.target.active_conn.count	0.000000	1718000000
   ```
 - **標準エラー出力（stderr/デバッグログ - DOWN時）**:
   ```text
@@ -205,11 +205,16 @@ make build
 本プラグインは、以下のメトリクス群を Mackerel に報告します（プレフィックスが `loadbalancer` の場合）。
 
 ### 1. サマリーメトリクス (指定したサーバの総合ステータス)
-監視対象のサーバが、ロードバランサ内で稼働している全体のステータスを表します。
+監視対象のサーバが、ロードバランサ内で稼働している全体のステータスを表します。それぞれのメトリクスは個別のグラフとして描画されます。
 
-- `custom.loadbalancer.target.status.status`: 総合ステータス (`1.0` = 正常/すべてのインスタンスがUP, `0.0` = 異常/いずれかがDOWN、または設定なし)
-- `custom.loadbalancer.target.cps.cps`: 監視対象サーバの合計 CPS（接続/秒）
-- `custom.loadbalancer.target.active_conn.active_conn`: 監視対象サーバの合計アクティブコネクション数
+- `custom.loadbalancer.target.status.check`: 総合ステータス (`1.0` = 正常/すべてのインスタンスがUP, `0.0` = 異常/いずれかがDOWN、または設定なし)
+- `custom.loadbalancer.target.cps.value`: 監視対象サーバの合計 CPS（接続/秒）
+- `custom.loadbalancer.target.active_conn.count`: 監視対象サーバの合計アクティブコネクション数
+
+> [!NOTE]
+> **メトリック命名規則の注意 (go-mackerel-plugin の制約)**
+> 本プラグインが使用している `go-mackerel-plugin` ヘルパーライブラリの仕様上、ワイルドカードを使用しない複数のグラフ定義で全く同じメトリック名（例: `num`）を使用すると、内部データ取得の際にマップのキー衝突が発生し、値が正しく出力されなくなります。
+> このため、本プラグインではグラフを個別に分割しつつキーの競合を防ぐため、サマリーメトリクスの末尾（メトリック名）を一意になるよう別々の名前（`.check`, `.value`, `.count`）で定義しています。
 
 ### 2. インスタンスメトリクス (個別ポート監視用)
 同一の実サーバが複数の仮想IPおよびポートにマッピングされている場合、以下のルールで個別のグラフとメトリクスが動的に生成されます。
