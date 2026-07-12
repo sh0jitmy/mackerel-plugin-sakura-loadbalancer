@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.0.2](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.1...v0.0.2) - 2026-07-12
+
+- docs: update README with current plugin usage and configuration details by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/9
+- feat: configure plugin for mkr installation and fix version.go reference by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/11
+
 ## [v0.0.1](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/commits/v0.0.1) - 2026-07-12
 
 - refactor: remove ent framework and rebuild project structure for plug… by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/4
