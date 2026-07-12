@@ -64,24 +64,12 @@ func (p *LoadBalancerPlugin) GraphDefinition() map[string]mp.Graphs {
 	labelPrefix := title(p.MetricKeyPrefix())
 
 	return map[string]mp.Graphs{
-		"target.status": {
-			Label: labelPrefix + " Target Server Status",
-			Unit:  "integer",
-			Metrics: []mp.Metrics{
-				{Name: "status", Label: "Status (1=UP, 0=DOWN)"},
-			},
-		},
-		"target.cps": {
-			Label: labelPrefix + " Target Server CPS",
+		"target": {
+			Label: labelPrefix + " Target Server Summary",
 			Unit:  "float",
 			Metrics: []mp.Metrics{
+				{Name: "status", Label: "Status (1=UP, 0=DOWN)"},
 				{Name: "cps", Label: "CPS"},
-			},
-		},
-		"target.active_conn": {
-			Label: labelPrefix + " Target Server Active Connections",
-			Unit:  "integer",
-			Metrics: []mp.Metrics{
 				{Name: "active_conn", Label: "Active Connections"},
 			},
 		},
