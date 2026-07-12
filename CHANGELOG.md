@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.0.4](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.3...v0.0.4) - 2026-07-12
+
+- feat: support mkr plugin install and document install paths by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/14
+
 ## [v0.0.3](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.2...v0.0.3) - 2026-07-12
 
 - ci: integrate goreleaser into tagpr workflow by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/12
