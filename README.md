@@ -31,6 +31,7 @@ mkr plugin install sh0jitmy/mackerel-plugin-sakura-loadbalancer
 
 ```bash
 mkr plugin install sh0jitmy/mackerel-plugin-sakura-loadbalancer@[version] #v0.0.1等
+
 ```
 
 ---
