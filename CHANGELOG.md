@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.0.8](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.7...v0.0.8) - 2026-07-12
+
+- refactor: decouple target summary metrics into individual graph definitions by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/22
+
 ## [v0.0.7](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.6...v0.0.7) - 2026-07-12
 
 - Fix/metirc label by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/20
