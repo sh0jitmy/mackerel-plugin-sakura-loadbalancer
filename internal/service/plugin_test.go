@@ -56,13 +56,15 @@ func TestLoadBalancerPlugin_GraphDefinition(t *testing.T) {
 	p := &LoadBalancerPlugin{Prefix: "test_lb"}
 	graphs := p.GraphDefinition()
 
-	assert.Contains(t, graphs, "target")
+	assert.Contains(t, graphs, "target.status")
+	assert.Contains(t, graphs, "target.cps")
+	assert.Contains(t, graphs, "target.active_conn")
 	assert.Contains(t, graphs, "server.status.#")
 	assert.Contains(t, graphs, "server.cps.#")
 	assert.Contains(t, graphs, "server.active_conn.#")
 
-	assert.Equal(t, "Test_lb Target Server Summary", graphs["target"].Label)
-	assert.Len(t, graphs["target"].Metrics, 3)
+	assert.Equal(t, "Test_lb Target Server Status", graphs["target.status"].Label)
+	assert.Len(t, graphs["target.status"].Metrics, 1)
 }
 
 func TestLoadBalancerPlugin_FetchMetrics_SuccessAllUp(t *testing.T) {
@@ -104,9 +106,9 @@ func TestLoadBalancerPlugin_FetchMetrics_SuccessAllUp(t *testing.T) {
 	assert.NotNil(t, metrics)
 
 	// Summary metrics
-	assert.InDelta(t, 1.0, metrics["status"], 1e-9)
-	assert.InDelta(t, 45.0, metrics["cps"], 1e-9)
-	assert.InDelta(t, 5.0, metrics["active_conn"], 1e-9)
+	assert.InDelta(t, 1.0, metrics["check"], 1e-9)
+	assert.InDelta(t, 45.0, metrics["value"], 1e-9)
+	assert.InDelta(t, 5.0, metrics["count"], 1e-9)
 
 	// Instance metrics
 	assert.InDelta(t, 1.0, metrics["server.status.192_0_2_1_80"], 1e-9)
@@ -166,9 +168,9 @@ func TestLoadBalancerPlugin_FetchMetrics_SuccessSomeDown(t *testing.T) {
 	assert.NotNil(t, metrics)
 
 	// Summary metrics: one UP and one DOWN means target status is DOWN (0.0)
-	assert.InDelta(t, 0.0, metrics["status"], 1e-9)
-	assert.InDelta(t, 45.0, metrics["cps"], 1e-9)
-	assert.InDelta(t, 5.0, metrics["active_conn"], 1e-9)
+	assert.InDelta(t, 0.0, metrics["check"], 1e-9)
+	assert.InDelta(t, 45.0, metrics["value"], 1e-9)
+	assert.InDelta(t, 5.0, metrics["count"], 1e-9)
 
 	// Instance metrics
 	assert.InDelta(t, 1.0, metrics["server.status.192_0_2_1_80"], 1e-9)
@@ -213,9 +215,9 @@ func TestLoadBalancerPlugin_FetchMetrics_ServerNotFound(t *testing.T) {
 	assert.NotNil(t, metrics)
 
 	// Summary metrics: not found means 0.0
-	assert.InDelta(t, 0.0, metrics["status"], 1e-9)
-	assert.InDelta(t, 0.0, metrics["cps"], 1e-9)
-	assert.InDelta(t, 0.0, metrics["active_conn"], 1e-9)
+	assert.InDelta(t, 0.0, metrics["check"], 1e-9)
+	assert.InDelta(t, 0.0, metrics["value"], 1e-9)
+	assert.InDelta(t, 0.0, metrics["count"], 1e-9)
 
 	// No instance metrics should exist for the target server
 	assert.Len(t, metrics, 3) // Only summary metrics exist
