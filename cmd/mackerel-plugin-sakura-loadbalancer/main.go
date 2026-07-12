@@ -71,6 +71,10 @@ func main() {
 				EnvVars: []string{"SAKURA_LB_DEBUG", "DEBUG"},
 				Usage:   "Enable debug logging (prints verbose logs to stderr)",
 			},
+			&cli.BoolFlag{
+				Name:  "check",
+				Usage: "Enable Check Plugin mode (outputs check results and exits with status 0 or 2)",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			token := c.String("token")
@@ -80,10 +84,11 @@ func main() {
 			serverIP := c.String("server-ip")
 			prefix := c.String("metric-key-prefix")
 			debug := c.Bool("debug")
+			check := c.Bool("check")
 
 			isMetaMode := os.Getenv("MACKEREL_AGENT_PLUGIN_META") != ""
 
-			if !isMetaMode {
+			if check || !isMetaMode {
 				if token == "" || secret == "" {
 					return cli.Exit("Sakura Cloud Access Token and Secret are required (via --token and --secret flags or SAKURACLOUD_ACCESS_TOKEN and SAKURACLOUD_ACCESS_TOKEN_SECRET env vars)", 1)
 				}
@@ -124,6 +129,12 @@ func main() {
 			}
 
 			// Output Mackerel definitions or values
+			if check {
+				msg, code := plugin.RunCheck()
+				fmt.Println(msg)
+				return cli.Exit("", code)
+			}
+
 			helper := mp.NewMackerelPlugin(plugin)
 			if isMetaMode {
 				helper.OutputDefinitions()

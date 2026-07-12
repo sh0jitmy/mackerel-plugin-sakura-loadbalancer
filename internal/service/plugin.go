@@ -42,6 +42,10 @@ type LoadBalancerPlugin struct {
 	Client         LoadBalancerStatusGetter
 	Context        context.Context
 	Debug          bool
+
+	// targetFound indicates whether the target server was found in the Load Balancer configurations.
+	// It is populated after calling FetchMetrics.
+	targetFound bool
 }
 
 // MetricKeyPrefix returns the prefix of metric keys.
@@ -198,5 +202,29 @@ func (p *LoadBalancerPlugin) FetchMetrics() (map[string]float64, error) {
 		}
 	}
 
+	p.targetFound = targetFound
 	return metrics, nil
+}
+
+// RunCheck executes the check plugin logic.
+// It returns a message to be output to stdout and an exit code.
+func (p *LoadBalancerPlugin) RunCheck() (string, int) {
+	metrics, err := p.FetchMetrics()
+	if err != nil {
+		return fmt.Sprintf("%s UNKNOWN: %s", strings.ToUpper(p.MetricKeyPrefix()), err.Error()), 3
+	}
+
+	statusVal, ok := metrics["status"]
+	if !ok {
+		return fmt.Sprintf("%s UNKNOWN: status metric not found", strings.ToUpper(p.MetricKeyPrefix())), 3
+	}
+
+	if statusVal == 1.0 {
+		return fmt.Sprintf("%s OK: target server %s status is UP", strings.ToUpper(p.MetricKeyPrefix()), p.TargetServerIP), 0
+	}
+
+	if !p.targetFound {
+		return fmt.Sprintf("%s CRITICAL: target server %s is not found on Load Balancer", strings.ToUpper(p.MetricKeyPrefix()), p.TargetServerIP), 2
+	}
+	return fmt.Sprintf("%s CRITICAL: target server %s status is DOWN", strings.ToUpper(p.MetricKeyPrefix()), p.TargetServerIP), 2
 }
