@@ -10,11 +10,14 @@
 
 1. **特定実サーバの稼働監視 (正常/異常)**:
    - 指定した実サーバのIPアドレスがロードバランサ内に設定されており、そのヘルスチェックステータスが `UP` であれば `1`（正常）、それ以外（`DOWN` または存在しない）は `0`（異常）としてサマリーメトリクスを報告します。
-2. **CPS & アクティブコネクション数の収集**:
+2. **Mackerel チェックプラグインに対応**:
+   - `--check` フラグを指定することで、チェック監視としても使用可能です。
+   - 監視対象実サーバの稼働状況に基づいて、終了コード（`0`: OK, `2`: CRITICAL, `3`: UNKNOWN）とメッセージを出力します。
+3. **CPS & アクティブコネクション数の収集**:
    - 監視対象サーバの CPS 値とアクティブコネクション数を集計して報告します。
-3. **複数 VIP・ポート対応 (個別メトリクス)**:
+4. **複数 VIP・ポート対応 (個別メトリクス)**:
    - 同一の実サーバが複数の仮想IP（VIP）およびポートにマッピングされている場合でも、それぞれのインスタンスごとに詳細なステータスと CPS を個別に監視し投稿します。
-4. **Mackerel エージェントプラグイン仕様準拠**:
+5. **Mackerel エージェントプラグイン仕様準拠**:
    - `MACKEREL_AGENT_PLUGIN_META=1` が指定された際に、自動的にグラフ定義メタデータ（JSON）を標準出力します。
 
 ---
@@ -44,9 +47,17 @@ mkr plugin install sh0jitmy/mackerel-plugin-sakura-loadbalancer@[version] #v0.0.
 
 インストール後、`/etc/mackerel-agent/mackerel-agent.conf` に以下のようにプラグインの実行設定を追加します。API アクセストークンなどの機密情報は、コマンド引数ではなく `env` 項目を使用して環境変数として渡すことを推奨します。
 
+### メトリックプラグイン（メトリクス収集）の設定
 ```toml
 [plugin.metrics.sakura-loadbalancer]
 command = ["/opt/mackerel-agent/plugins/bin/mackerel-plugin-sakura-loadbalancer", "-lb-id", "123456789012", "-server-ip", "192.168.1.10"]
+env = { SAKURACLOUD_ACCESS_TOKEN = "<APIトークン>", SAKURACLOUD_ACCESS_TOKEN_SECRET = "<APIシークレット>", SAKURACLOUD_ZONE = "is1a" }
+```
+
+### チェックプラグイン（死活監視・カスタムチェック）の設定
+```toml
+[plugin.checks.sakura-loadbalancer]
+command = ["/opt/mackerel-agent/plugins/bin/mackerel-plugin-sakura-loadbalancer", "-check", "-lb-id", "123456789012", "-server-ip", "192.168.1.10"]
 env = { SAKURACLOUD_ACCESS_TOKEN = "<APIトークン>", SAKURACLOUD_ACCESS_TOKEN_SECRET = "<APIシークレット>", SAKURACLOUD_ZONE = "is1a" }
 ```
 
@@ -83,9 +94,9 @@ make build
 ##### ケースA：正常検出時（指定サーバがロードバランサで稼働中）
 - **標準出力（stdout）**: Mackerel用の正常値（`status` が `1`）が出力されます。
   ```text
-  loadbalancer.target.status.status	1.000000	1718000000
-  loadbalancer.target.cps.cps	45.000000	1718000000
-  loadbalancer.target.active_conn.active_conn	5.000000	1718000000
+  loadbalancer.target.status	1.000000	1718000000
+  loadbalancer.target.cps	45.000000	1718000000
+  loadbalancer.target.active_conn	5.000000	1718000000
   loadbalancer.server.status.192_0_2_1_80	1.000000	1718000000
   loadbalancer.server.cps.192_0_2_1_80	45.000000	1718000000
   loadbalancer.server.active_conn.192_0_2_1_80	5.000000	1718000000
@@ -103,9 +114,9 @@ make build
 ##### ケースB：異常検出時（指定サーバがDOWN、またはロードバランサに設定されていない）
 - **標準出力（stdout）**: 異常値（`status` が `0`）が出力されます。
   ```text
-  loadbalancer.target.status.status	0.000000	1718000000
-  loadbalancer.target.cps.cps	0.000000	1718000000
-  loadbalancer.target.active_conn.active_conn	0.000000	1718000000
+  loadbalancer.target.status	0.000000	1718000000
+  loadbalancer.target.cps	0.000000	1718000000
+  loadbalancer.target.active_conn	0.000000	1718000000
   ```
 - **標準エラー出力（stderr/デバッグログ - DOWN時）**:
   ```text
@@ -140,6 +151,37 @@ make build
   exit status 1
   ```
 
+##### ケースD：チェック監視モード（`--check`）実行時
+チェックモードを有効化した場合、標準出力にステータスメッセージが出力され、終了コードで状態を返します。
+
+###### 正常時（すべてUP）
+- **標準出力（stdout）**:
+  ```text
+  LOADBALANCER OK: target server 192.168.1.10 status is UP
+  ```
+- **終了コード**: `0`
+
+###### 異常時（DOWN）
+- **標準出力（stdout）**:
+  ```text
+  LOADBALANCER CRITICAL: target server 192.168.1.10 status is DOWN
+  ```
+- **終了コード**: `2`
+
+###### 異常時（指定した実サーバがロードバランサに設定されていない）
+- **標準出力（stdout）**:
+  ```text
+  LOADBALANCER CRITICAL: target server 192.168.1.10 is not found on Load Balancer
+  ```
+- **終了コード**: `2`
+
+###### エラー発生時（認証エラーやAPIエラー）
+- **標準出力（stdout）**:
+  ```text
+  LOADBALANCER UNKNOWN: failed to get load balancer status: ...
+  ```
+- **終了コード**: `3`
+
 ---
 
 ## ⚙️ 設定オプション
@@ -154,6 +196,7 @@ make build
 | `-lb-id` | - | - | 監視対象ロードバランサのリソースID（数字） **(必須)** |
 | `-server-ip` | - | - | 監視対象の実サーバ（バックエンドサーバ）のIPアドレス **(必須)** |
 | `-metric-key-prefix` | - | `loadbalancer` | メトリクス名の接頭辞 |
+| `-check` | - | `false` | チェックプラグインモードを有効化（終了コード 0 / 2 / 3 を返す） |
 
 ---
 
