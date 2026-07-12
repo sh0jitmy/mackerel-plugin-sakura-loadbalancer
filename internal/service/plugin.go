@@ -189,21 +189,21 @@ func (p *LoadBalancerPlugin) FetchMetrics() (map[string]float64, error) {
 	// Set summary target metrics
 	if targetFound {
 		if targetAllUp {
-			metrics["target.status.status"] = 1.0
+			metrics["status"] = 1.0
 		} else {
-			metrics["target.status.status"] = 0.0
+			metrics["status"] = 0.0
 		}
-		metrics["target.cps.cps"] = totalCPS
-		metrics["target.active_conn.active_conn"] = totalActiveConn
+		metrics["cps"] = totalCPS
+		metrics["active_conn"] = totalActiveConn
 
 		if p.Debug {
 			log.Printf("[DEBUG] Target server found on LoadBalancer. Target all UP: %t, Total CPS: %.2f, Total ActiveConn: %.2f", targetAllUp, totalCPS, totalActiveConn)
 		}
 	} else {
 		// Target server not configured on this Load Balancer
-		metrics["target.status.status"] = 0.0
-		metrics["target.cps.cps"] = 0.0
-		metrics["target.active_conn.active_conn"] = 0.0
+		metrics["status"] = 0.0
+		metrics["cps"] = 0.0
+		metrics["active_conn"] = 0.0
 
 		if p.Debug {
 			log.Printf("[DEBUG] Target server %s was NOT configured on this LoadBalancer. Setting target status to 0.0", p.TargetServerIP)
