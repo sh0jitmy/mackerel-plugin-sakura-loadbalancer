@@ -26,17 +26,16 @@ import (
 	mp "github.com/mackerelio/go-mackerel-plugin"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	loadbalancer "github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer"
 	"github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/internal/service"
 	"github.com/urfave/cli/v2"
 )
-
-const Version = "0.0.0"
 
 func main() {
 	app := &cli.App{
 		Name:    "mackerel-plugin-sakura-loadbalancer",
 		Usage:   "Mackerel agent plugin for Sakura Cloud Load Balancer",
-		Version: Version,
+		Version: loadbalancer.Version,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "token",
