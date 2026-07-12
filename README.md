@@ -19,6 +19,22 @@
 
 ---
 
+## 📥 インストール方法
+
+Mackerel の `mkr` CLI を使用して、GitHub から直接本プラグインをインストールできます。
+
+```bash
+mkr plugin install sh0jitmy/mackerel-plugin-sakura-loadbalancer
+```
+
+特定のバージョン（リリース）を指定してインストールする場合は、以下のように指定します。
+
+```bash
+mkr plugin install sh0jitmy/mackerel-plugin-sakura-loadbalancer@v0.0.2
+```
+
+---
+
 ## 🛠️ クイックスタート
 
 ### 1. ビルド
