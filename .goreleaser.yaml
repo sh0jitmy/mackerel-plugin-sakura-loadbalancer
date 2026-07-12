@@ -11,11 +11,8 @@ builds:
     main: ./cmd/mackerel-plugin-sakura-loadbalancer
     goos:
       - linux
-      - darwin
-      - windows
     goarch:
       - amd64
-      - arm64
 
 archives:
   - format: zip
