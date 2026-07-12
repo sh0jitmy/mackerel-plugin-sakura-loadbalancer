@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.0.6](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.5...v0.0.6) - 2026-07-12
+
+- Feat/simplify metric keys by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/18
+
 ## [v0.0.5](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.4...v0.0.5) - 2026-07-12
 
 - fix: correct summary metric keys to match GraphDefinition metrics names by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/16
