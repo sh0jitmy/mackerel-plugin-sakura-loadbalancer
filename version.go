@@ -17,4 +17,4 @@
 package loadbalancer
 
 // Version is the application version, automatically managed by tagpr.
-const Version = "0.0.5"
+const Version = "0.0.6"
