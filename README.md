@@ -83,9 +83,9 @@ make build
 ##### ケースA：正常検出時（指定サーバがロードバランサで稼働中）
 - **標準出力（stdout）**: Mackerel用の正常値（`status` が `1`）が出力されます。
   ```text
-  loadbalancer.target.status.status	1.000000	1718000000
-  loadbalancer.target.cps.cps	45.000000	1718000000
-  loadbalancer.target.active_conn.active_conn	5.000000	1718000000
+  loadbalancer.target.status	1.000000	1718000000
+  loadbalancer.target.cps	45.000000	1718000000
+  loadbalancer.target.active_conn	5.000000	1718000000
   loadbalancer.server.status.192_0_2_1_80	1.000000	1718000000
   loadbalancer.server.cps.192_0_2_1_80	45.000000	1718000000
   loadbalancer.server.active_conn.192_0_2_1_80	5.000000	1718000000
@@ -103,9 +103,9 @@ make build
 ##### ケースB：異常検出時（指定サーバがDOWN、またはロードバランサに設定されていない）
 - **標準出力（stdout）**: 異常値（`status` が `0`）が出力されます。
   ```text
-  loadbalancer.target.status.status	0.000000	1718000000
-  loadbalancer.target.cps.cps	0.000000	1718000000
-  loadbalancer.target.active_conn.active_conn	0.000000	1718000000
+  loadbalancer.target.status	0.000000	1718000000
+  loadbalancer.target.cps	0.000000	1718000000
+  loadbalancer.target.active_conn	0.000000	1718000000
   ```
 - **標準エラー出力（stderr/デバッグログ - DOWN時）**:
   ```text

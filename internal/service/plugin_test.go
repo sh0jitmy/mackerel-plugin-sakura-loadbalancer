@@ -56,14 +56,13 @@ func TestLoadBalancerPlugin_GraphDefinition(t *testing.T) {
 	p := &LoadBalancerPlugin{Prefix: "test_lb"}
 	graphs := p.GraphDefinition()
 
-	assert.Contains(t, graphs, "target.status")
-	assert.Contains(t, graphs, "target.cps")
-	assert.Contains(t, graphs, "target.active_conn")
+	assert.Contains(t, graphs, "target")
 	assert.Contains(t, graphs, "server.status.#")
 	assert.Contains(t, graphs, "server.cps.#")
 	assert.Contains(t, graphs, "server.active_conn.#")
 
-	assert.Equal(t, "Test_lb Target Server Status", graphs["target.status"].Label)
+	assert.Equal(t, "Test_lb Target Server Summary", graphs["target"].Label)
+	assert.Len(t, graphs["target"].Metrics, 3)
 }
 
 func TestLoadBalancerPlugin_FetchMetrics_SuccessAllUp(t *testing.T) {
