@@ -8,6 +8,7 @@
 ### 1. プロジェクト初期セットアップ
 - [x] **R-1.1 モジュール名のカスタマイズ**: `go.mod` 内のモジュール名が `github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer` に変更され、サポートするGoのバージョンが正しく指定されていること。
 - [x] **R-1.2 依存関係の導入**: `go.mod` / `go.sum` にて `iaas-api-go` および `go-mackerel-plugin` の依存関係が正しく導入され解決していること。
+- [x] **R-1.3 version.go の維持**: ルートディレクトリの `version.go` は、自動タグ付けツール `tagpr` が正常に機能するために、移動または修正せずにそのまま維持されていること。
 
 ### 2. 機能要件
 - [x] **R-2.1 LoadBalancer 状態取得の実行**: `sacloud/iaas-api-go` の `(o *LoadBalancerOp) Status` API を呼び出してロードバランサの状態を取得できること。
