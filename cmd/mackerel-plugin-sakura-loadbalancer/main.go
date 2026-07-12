@@ -18,7 +18,7 @@ package main
 
 import (
 	"context"
-	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -26,90 +26,108 @@ import (
 	mp "github.com/mackerelio/go-mackerel-plugin"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	loadbalancer "github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer"
 	"github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/internal/service"
+	"github.com/urfave/cli/v2"
 )
 
 func main() {
-	optToken := flag.String("token", "", "Sakura Cloud Access Token")
-	optSecret := flag.String("secret", "", "Sakura Cloud Access Token Secret")
-	optZone := flag.String("zone", "is1a", "Sakura Cloud Zone")
-	optLBID := flag.String("lb-id", "", "Sakura Cloud Load Balancer ID")
-	optServerIP := flag.String("server-ip", "", "Sakura Cloud Load Balancer Backend Server IP")
-	optPrefix := flag.String("metric-key-prefix", "loadbalancer", "Metric Key Prefix")
-	flag.Parse()
+	app := &cli.App{
+		Name:    "mackerel-plugin-sakura-loadbalancer",
+		Usage:   "Mackerel agent plugin for Sakura Cloud Load Balancer",
+		Version: loadbalancer.Version,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "token",
+				EnvVars: []string{"SAKURACLOUD_ACCESS_TOKEN", "SAKURA_ACCESS_TOKEN"},
+				Usage:   "Sakura Cloud Access Token (recommended to pass via environment variables for security)",
+			},
+			&cli.StringFlag{
+				Name:    "secret",
+				EnvVars: []string{"SAKURACLOUD_ACCESS_TOKEN_SECRET", "SAKURA_ACCESS_TOKEN_SECRET"},
+				Usage:   "Sakura Cloud Access Token Secret (recommended to pass via environment variables for security)",
+			},
+			&cli.StringFlag{
+				Name:    "zone",
+				Value:   "is1a",
+				EnvVars: []string{"SAKURACLOUD_ZONE", "SAKURA_ZONE"},
+				Usage:   "Sakura Cloud Zone",
+			},
+			&cli.StringFlag{
+				Name:  "lb-id",
+				Usage: "Sakura Cloud Load Balancer Resource ID",
+			},
+			&cli.StringFlag{
+				Name:  "server-ip",
+				Usage: "Sakura Cloud Load Balancer Backend Server IP",
+			},
+			&cli.StringFlag{
+				Name:  "metric-key-prefix",
+				Value: "loadbalancer",
+				Usage: "Metric Key Prefix",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			token := c.String("token")
+			secret := c.String("secret")
+			zone := c.String("zone")
+			lbIDStr := c.String("lb-id")
+			serverIP := c.String("server-ip")
+			prefix := c.String("metric-key-prefix")
 
-	// Parse parameters with environment variable fallback
-	token := *optToken
-	if token == "" {
-		token = os.Getenv("SAKURACLOUD_ACCESS_TOKEN")
-		if token == "" {
-			token = os.Getenv("SAKURA_ACCESS_TOKEN")
-		}
-	}
+			isMetaMode := os.Getenv("MACKEREL_AGENT_PLUGIN_META") != ""
 
-	secret := *optSecret
-	if secret == "" {
-		secret = os.Getenv("SAKURACLOUD_ACCESS_TOKEN_SECRET")
-		if secret == "" {
-			secret = os.Getenv("SAKURA_ACCESS_TOKEN_SECRET")
-		}
-	}
-
-	zone := *optZone
-	if zone == "" {
-		zone = os.Getenv("SAKURACLOUD_ZONE")
-		if zone == "" {
-			zone = os.Getenv("SAKURA_ZONE")
-			if zone == "" {
-				zone = "is1a"
+			if !isMetaMode {
+				if token == "" || secret == "" {
+					return cli.Exit("Sakura Cloud Access Token and Secret are required (via --token and --secret flags or SAKURACLOUD_ACCESS_TOKEN and SAKURACLOUD_ACCESS_TOKEN_SECRET env vars)", 1)
+				}
+				if lbIDStr == "" {
+					return cli.Exit("--lb-id flag is required", 1)
+				}
+				if serverIP == "" {
+					return cli.Exit("--server-ip flag is required", 1)
+				}
 			}
-		}
+
+			var lbID types.ID
+			if lbIDStr != "" {
+				id, err := strconv.ParseInt(lbIDStr, 10, 64)
+				if err != nil {
+					return fmt.Errorf("invalid load balancer ID: %w", err)
+				}
+				lbID = types.ID(id)
+			}
+
+			// Initialize API client
+			var client *iaas.Client
+			var lbOp service.LoadBalancerStatusGetter
+			if token != "" && secret != "" {
+				client = iaas.NewClient(token, secret)
+				lbOp = iaas.NewLoadBalancerOp(client)
+			}
+
+			// Create Mackerel plugin instance
+			plugin := &service.LoadBalancerPlugin{
+				TargetServerIP: serverIP,
+				LoadBalancerID: lbID,
+				Zone:           zone,
+				Prefix:         prefix,
+				Client:         lbOp,
+				Context:        context.Background(),
+			}
+
+			// Output Mackerel definitions or values
+			helper := mp.NewMackerelPlugin(plugin)
+			if isMetaMode {
+				helper.OutputDefinitions()
+			} else {
+				helper.OutputValues()
+			}
+			return nil
+		},
 	}
 
-	isMetaMode := os.Getenv("MACKEREL_AGENT_PLUGIN_META") != ""
-
-	// Validation is only strictly enforced when fetching metrics.
-	// In metadata output mode, empty parameters are allowed to prevent errors in plugin discovery.
-	if !isMetaMode {
-		if token == "" || secret == "" {
-			log.Fatal("Sakura Cloud Access Token and Secret are required (via -token and -secret flags or SAKURACLOUD_ACCESS_TOKEN and SAKURACLOUD_ACCESS_TOKEN_SECRET env vars)")
-		}
-		if *optLBID == "" {
-			log.Fatal("-lb-id flag is required")
-		}
-		if *optServerIP == "" {
-			log.Fatal("-server-ip flag is required")
-		}
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
 	}
-
-	var lbID types.ID
-	if *optLBID != "" {
-		id, err := strconv.ParseInt(*optLBID, 10, 64)
-		if err != nil {
-			log.Fatalf("invalid load balancer ID: %v", err)
-		}
-		lbID = types.ID(id)
-	}
-
-	// Initialize API client
-	var client *iaas.Client
-	var lbOp service.LoadBalancerStatusGetter
-	if token != "" && secret != "" {
-		client = iaas.NewClient(token, secret)
-		lbOp = iaas.NewLoadBalancerOp(client)
-	}
-
-	// Create Mackerel plugin instance
-	plugin := &service.LoadBalancerPlugin{
-		TargetServerIP: *optServerIP,
-		LoadBalancerID: lbID,
-		Zone:           zone,
-		Prefix:         *optPrefix,
-		Client:         lbOp,
-		Context:        context.Background(),
-	}
-
-	// Run standard mackerel plugin routine
-	helper := mp.NewMackerelPlugin(plugin)
-	helper.Run()
 }
