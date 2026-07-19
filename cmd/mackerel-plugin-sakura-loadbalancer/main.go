@@ -26,6 +26,7 @@ import (
 	mp "github.com/mackerelio/go-mackerel-plugin"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/saclient-go"
 	loadbalancer "github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer"
 	"github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/internal/service"
 	"github.com/urfave/cli/v2"
@@ -113,7 +114,14 @@ func main() {
 			var client *iaas.Client
 			var lbOp service.LoadBalancerStatusGetter
 			if token != "" && secret != "" {
-				client = iaas.NewClient(token, secret)
+				var sa saclient.Client
+				if err := sa.SetWith(saclient.WithBasicAuth(token, secret)); err != nil {
+					return fmt.Errorf("failed to configure API client: %w", err)
+				}
+				if err := sa.Populate(); err != nil {
+					return fmt.Errorf("failed to initialize API client: %w", err)
+				}
+				client = iaas.NewClientFromSaclient(&sa)
 				lbOp = iaas.NewLoadBalancerOp(client)
 			}
 
