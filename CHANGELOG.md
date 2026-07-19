@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.0.9](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.8...v0.0.9) - 2026-07-19
+
+- build(deps): bump goreleaser/goreleaser-action from 7.2.2 to 7.2.3 by @dependabot[bot] in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/24
+- build(deps): bump actions/setup-go from 6.5.0 to 7.0.0 by @dependabot[bot] in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/28
+- build(deps): bump github.com/stretchr/testify from 1.9.0 to 1.11.1 by @dependabot[bot] in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/27
+- build(deps): bump Songmu/tagpr from 1.20.0 to 1.20.1 by @dependabot[bot] in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/26
+- fix: update dependencies and migrate to saclient-go  by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/30
+
 ## [v0.0.8](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.7...v0.0.8) - 2026-07-12
 
 - refactor: decouple target summary metrics into individual graph definitions by @sh0jitmy in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/22
