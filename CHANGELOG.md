@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.0.10](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.9...v0.0.10) - 2026-07-29
+
+- build(deps): bump actions/checkout from 7.0.0 to 7.0.1 by @dependabot[bot] in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/31
+
 ## [v0.0.9](https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/compare/v0.0.8...v0.0.9) - 2026-07-19
 
 - build(deps): bump goreleaser/goreleaser-action from 7.2.2 to 7.2.3 by @dependabot[bot] in https://github.com/sh0jitmy/mackerel-plugin-sakura-loadbalancer/pull/24
