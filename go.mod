@@ -5,7 +5,7 @@ go 1.26.5
 require (
 	github.com/mackerelio/go-mackerel-plugin v0.1.6
 	github.com/sacloud/iaas-api-go v1.29.2
-	github.com/sacloud/saclient-go v0.4.0
+	github.com/sacloud/saclient-go v0.4.1
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.27.7
 	go.uber.org/goleak v1.3.0
